@@ -131,7 +131,7 @@ namespace Microsoft.Plugin.Indexer
                             Result r = new Result();
                             r.Title = searchResult.Title;
                             r.SubTitle = Properties.Resources.Microsoft_plugin_indexer_subtitle_header + ": " + path;
-                            r.IcoPath = path;
+                            r.IcoPath = WarningIconPath;
                             r.ToolTipData = new ToolTipData(toolTipTitle, toolTipText);
                             r.Action = c =>
                             {
