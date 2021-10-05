@@ -628,6 +628,7 @@ namespace Microsoft.Plugin.Program.Programs
             do
             {
                 var currentDirectory = folderQueue.Dequeue();
+                Log.Info($"DEBUG: Dequeueing from {folderQueue.Count + 1} elements for search: {currentDirectory}", typeof(Win32Program));
                 try
                 {
                     foreach (var suffix in suffixes)
@@ -702,6 +703,7 @@ namespace Microsoft.Plugin.Program.Programs
             string[] searchPaths = pathEnvVariable.Split(Path.PathSeparator);
             var toFilterAllPaths = new List<string>();
             bool isRecursiveSearch = true;
+            Log.Info($"DEBUG: Got this PATH: [ {pathEnvVariable} ]", typeof(Win32Program));
 
             foreach (string path in searchPaths)
             {
@@ -709,7 +711,9 @@ namespace Microsoft.Plugin.Program.Programs
                 {
                     // to expand any environment variables present in the path
                     string directory = Environment.ExpandEnvironmentVariables(path);
+                    Log.Info($"DEBUG: Going to search inside: {directory}", typeof(Win32Program));
                     var paths = ProgramPaths(directory, suffixes, !isRecursiveSearch);
+                    Log.Info($"DEBUG: Searched inside: {directory}", typeof(Win32Program));
                     toFilterAllPaths.AddRange(paths);
                 }
             }
@@ -885,15 +889,38 @@ namespace Microsoft.Plugin.Program.Programs
                 // Multiple paths could have the same programPaths and we don't want to resolve / lookup them multiple times
                 var paths = new HashSet<string>(defaultHashsetSize);
                 var runCommandPaths = new HashSet<string>(defaultHashsetSize);
+                Log.Info($"DEBUG: Getting Win32Program Sources", typeof(Win32Program));
 
                 // Parallelize multiple sources, and priority based on paths which most likely contain .lnks which are formatted
                 var sources = new (bool IsEnabled, Func<IEnumerable<string>> GetPaths)[]
                 {
-                    (true, () => CustomProgramPaths(settings.ProgramSources, settings.ProgramSuffixes)),
-                    (settings.EnableStartMenuSource, () => StartMenuProgramPaths(settings.ProgramSuffixes)),
-                    (settings.EnableDesktopSource, () => DesktopProgramPaths(settings.ProgramSuffixes)),
-                    (settings.EnableRegistrySource, () => RegisteryAppProgramPaths(settings.ProgramSuffixes)),
+                    (true, () =>
+                    {
+                        var result = CustomProgramPaths(settings.ProgramSources, settings.ProgramSuffixes);
+                        Log.Info($"DEBUG: Got CustomProgramPaths", typeof(Win32Program));
+                        return result;
+                    }),
+                    (settings.EnableStartMenuSource, () =>
+                    {
+                        var result = StartMenuProgramPaths(settings.ProgramSuffixes);
+                        Log.Info($"DEBUG: Got StartMenuProgramPaths", typeof(Win32Program));
+                        return result;
+                    }),
+                    (settings.EnableDesktopSource, () =>
+                    {
+                        var result = DesktopProgramPaths(settings.ProgramSuffixes);
+                        Log.Info($"DEBUG: Got ProgramSuffixes", typeof(Win32Program));
+                        return result;
+                    }),
+                    (settings.EnableRegistrySource, () =>
+                    {
+                        var result = RegisteryAppProgramPaths(settings.ProgramSuffixes);
+                        Log.Info($"DEBUG: Got RegisteryAppProgramPaths", typeof(Win32Program));
+                        return result;
+                    }),
                 };
+
+                Log.Info($"DEBUG: Getting PathEnvironment Program Sources", typeof(Win32Program));
 
                 // Run commands are always set as AppType "RunCommand"
                 var runCommandSources = new (bool IsEnabled, Func<IEnumerable<string>> GetPaths)[]
@@ -901,7 +928,11 @@ namespace Microsoft.Plugin.Program.Programs
                     (settings.EnablePathEnvironmentVariableSource, () => PathEnvironmentProgramPaths(settings.ProgramSuffixes)),
                 };
 
+                Log.Info($"DEBUG: Got PathEnvironment Program Sources", typeof(Win32Program));
+
                 var disabledProgramsList = settings.DisabledProgramSources;
+
+                Log.Info($"DEBUG: Got Disabled Program Sources", typeof(Win32Program));
 
                 // Get all paths but exclude all normal .Executables
                 paths.UnionWith(sources
@@ -909,13 +940,19 @@ namespace Microsoft.Plugin.Program.Programs
                     .SelectMany(source => source.IsEnabled ? source.GetPaths() : Enumerable.Empty<string>())
                     .Where(programPath => disabledProgramsList.All(x => x.UniqueIdentifier != programPath))
                     .Where(path => !ExecutableApplicationExtensions.Contains(Extension(path))));
+                Log.Info($"DEBUG: Got paths excluding executable extensions", typeof(Win32Program));
+
                 runCommandPaths.UnionWith(runCommandSources
                     .AsParallel()
                     .SelectMany(source => source.IsEnabled ? source.GetPaths() : Enumerable.Empty<string>())
                     .Where(programPath => disabledProgramsList.All(x => x.UniqueIdentifier != programPath)));
+                Log.Info($"DEBUG: Got run command paths", typeof(Win32Program));
 
                 var programs = paths.AsParallel().Select(source => GetProgramFromPath(source));
+                Log.Info($"DEBUG: Got programs from path", typeof(Win32Program));
+
                 var runCommandPrograms = runCommandPaths.AsParallel().Select(source => GetRunCommandProgramFromPath(source));
+                Log.Info($"DEBUG: Got run commands from path", typeof(Win32Program));
 
                 return DeduplicatePrograms(programs.Concat(runCommandPrograms).Where(program => program?.Valid == true));
             }
