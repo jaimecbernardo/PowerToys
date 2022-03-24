@@ -4,6 +4,7 @@
 
 using System.ComponentModel.Composition;
 using System.Windows;
+using System.Windows.Interop;
 using ColorPicker.ViewModelContracts;
 
 namespace ColorPicker
@@ -29,6 +30,11 @@ namespace ColorPicker
         {
             Closing -= MainWindow_Closing;
             Bootstrapper.Dispose();
+        }
+
+        private void MainWindowSourceInitialized(object sender, System.EventArgs e)
+        {
+            this.MainViewModel.RegisterWindowHandle(HwndSource.FromHwnd(new WindowInteropHelper(this).Handle));
         }
     }
 }
