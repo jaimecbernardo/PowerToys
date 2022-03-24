@@ -20,6 +20,7 @@ namespace ColorPicker
             Bootstrapper.InitializeContainer(this);
             InitializeComponent();
             DataContext = this;
+            Show(); // Call show just to make sure source is initialized at startup.
             Hide();
         }
 
