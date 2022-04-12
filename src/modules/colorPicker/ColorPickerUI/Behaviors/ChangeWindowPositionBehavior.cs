@@ -75,8 +75,17 @@ namespace ColorPicker.Behaviors
 
         private static Rect GetBoundsOfMonitorWithMouseIn(Point mousePosition)
         {
+            Rect result = new Rect(0, 0, 0, 0);
+            bool monitorSet = false;
             foreach (var monitor in MonitorResolutionHelper.AllMonitors)
             {
+                if (!monitorSet)
+                {
+                    // Try to return any valid monitor, in case the mouse coordinates are not within any monitor.
+                    result = monitor.Bounds;
+                    monitorSet = true;
+                }
+
                 if (monitor.Bounds.Contains(new Point(mousePosition.X, mousePosition.Y)))
                 {
                     return monitor.Bounds;
@@ -84,7 +93,13 @@ namespace ColorPicker.Behaviors
             }
 
             Logger.LogWarning("Failed to get monitor bounds for mouse position" + mousePosition.X + "," + mousePosition.Y);
-            return new Rect(0, 0, 0, 0);
+
+            if (!monitorSet)
+            {
+                Logger.LogWarning("No valid monitor was found, as well.");
+            }
+
+            return result;
         }
     }
 }
