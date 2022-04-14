@@ -111,7 +111,7 @@ namespace Microsoft.Plugin.Program.Programs
             void SetRelativePath([MarshalAs(UnmanagedType.LPWStr)] string pszPathRel, int dwReserved);
 
             /// <summary>Attempts to find the target of a Shell link, even if it has been moved or renamed</summary>
-            void Resolve(ref Accessibility._RemotableHandle hwnd, SLR_FLAGS fFlags);
+            void Resolve(IntPtr hwnd, SLR_FLAGS fFlags);
 
             /// <summary>Sets the path and file name of a Shell link object</summary>
             void SetPath([MarshalAs(UnmanagedType.LPWStr)] string pszFile);
@@ -148,8 +148,8 @@ namespace Microsoft.Plugin.Program.Programs
                 return string.Empty;
             }
 
-            var hwnd = default(_RemotableHandle);
-            ((IShellLinkW)link).Resolve(ref hwnd, 0);
+            IntPtr hwnd = IntPtr.Zero;
+            ((IShellLinkW)link).Resolve(hwnd, SLR_FLAGS.SLR_NO_UI);
 
             const int MAX_PATH = 260;
             StringBuilder buffer = new StringBuilder(MAX_PATH);
