@@ -15,6 +15,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.PowerToys.Telemetry;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using Microsoft.Windows.ApplicationModel.Resources;
 
 namespace Hosts
 {
@@ -41,6 +42,12 @@ namespace Hosts
         public App()
         {
             InitializeComponent();
+
+            ResourceManagerRequested += (_, e) =>
+            {
+                IResourceManager resourceManager = new LanguageOverrideResourceManager("PowerToys.Hosts.pri", "de-DE");
+                e.CustomResourceManager = resourceManager;
+            };
 
             Host = Microsoft.Extensions.Hosting.Host.
                 CreateDefaultBuilder().
